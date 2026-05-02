@@ -1,4 +1,4 @@
-const CACHE_NAME = "daily-checkin-v1";
+const CACHE_NAME = "daily-checkin-v2";
 const SHELL = [
   "./",
   "./index.html",

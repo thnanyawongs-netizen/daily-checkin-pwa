@@ -50,13 +50,23 @@
       <section class="panel is-active" id="todayPanel" aria-labelledby="todayTab">
         <div class="section-head">
           <h2>今日事项</h2>
-          <button class="icon-button" type="button" id="resetTodayButton" title="重置今日打卡" aria-label="重置今日打卡">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 12a9 9 0 1 0 3-6.7" />
-              <path d="M3 3v6h6" />
-            </svg>
-          </button>
+          <div class="button-cluster">
+            <button class="icon-button" type="button" id="speakAllButton" title="播报今日事项" aria-label="播报今日事项">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4Z" />
+                <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+              </svg>
+            </button>
+            <button class="icon-button" type="button" id="resetTodayButton" title="重置今日打卡" aria-label="重置今日打卡">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                <path d="M3 3v6h6" />
+              </svg>
+            </button>
+          </div>
         </div>
+        <p class="voice-status" id="voiceStatus" aria-live="polite"></p>
         <div class="task-list" id="taskList"></div>
       </section>
 
@@ -117,7 +127,15 @@
             <p></p>
           </div>
         </div>
-        <button class="check-button" type="button"></button>
+        <div class="task-actions">
+          <button class="voice-button" type="button" title="播报这一项" aria-label="播报这一项">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11 5 6 9H3v6h3l5 4Z" />
+              <path d="M16 9.5a4 4 0 0 1 0 5" />
+            </svg>
+          </button>
+          <button class="check-button" type="button"></button>
+        </div>
       </article>
     </template>
 

@@ -1,4 +1,5 @@
 const STORAGE_KEY = "daily-checkin:v1";
+const SPEECH_SUPPORTED = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
 
 const defaultState = {
   tasks: [
@@ -31,6 +32,8 @@ const els = {
   taskStandard: document.querySelector("#taskStandard"),
   clearFormButton: document.querySelector("#clearFormButton"),
   resetTodayButton: document.querySelector("#resetTodayButton"),
+  speakAllButton: document.querySelector("#speakAllButton"),
+  voiceStatus: document.querySelector("#voiceStatus"),
   exportButton: document.querySelector("#exportButton"),
 };
 
@@ -91,6 +94,10 @@ function bindActions() {
     render();
   });
 
+  els.speakAllButton.addEventListener("click", () => {
+    speakToday();
+  });
+
   els.exportButton.addEventListener("click", exportData);
 }
 
@@ -131,10 +138,15 @@ function renderTasks() {
     node.querySelector("h3").textContent = task.action;
     node.querySelector("p").textContent = `完成标准：${task.standard}`;
 
-    const button = node.querySelector(".check-button");
-    button.textContent = isDone ? "已打卡" : "打卡";
-    button.classList.toggle("is-done", isDone);
-    button.addEventListener("click", () => {
+    const voiceButton = node.querySelector(".voice-button");
+    voiceButton.addEventListener("click", () => {
+      speakTask(task);
+    });
+
+    const checkButton = node.querySelector(".check-button");
+    checkButton.textContent = isDone ? "已打卡" : "打卡";
+    checkButton.classList.toggle("is-done", isDone);
+    checkButton.addEventListener("click", () => {
       toggleTask(task.id);
     });
 
@@ -219,6 +231,86 @@ function toggleTask(taskId) {
 
   saveState();
   render();
+}
+
+function speakToday() {
+  if (state.tasks.length === 0) {
+    speak("今天还没有事项。", els.speakAllButton);
+    return;
+  }
+
+  const today = todayKey();
+  const done = getDoneCount(today);
+  const intro = `今天共有 ${state.tasks.length} 项，已完成 ${done} 项。`;
+  const tasks = state.tasks.map((task, index) => {
+    return `第 ${index + 1} 项，${buildTaskSpeech(task)}。`;
+  });
+
+  speak([intro, ...tasks].join(" "), els.speakAllButton);
+}
+
+function speakTask(task) {
+  const buttons = [...document.querySelectorAll(".voice-button")];
+  const index = state.tasks.findIndex((item) => item.id === task.id);
+  speak(buildTaskSpeech(task), buttons[index]);
+}
+
+function buildTaskSpeech(task) {
+  const isDone = Boolean(state.completions[todayKey()]?.[task.id]);
+  const status = isDone ? "已完成" : "未完成";
+  return `${task.time}，${task.action}。完成标准：${task.standard}。打卡状态：${status}`;
+}
+
+function speak(text, activeButton) {
+  if (!SPEECH_SUPPORTED) {
+    setVoiceStatus("当前浏览器不支持语音播报");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  clearSpeakingButtons();
+  activeButton?.classList.add("is-speaking");
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "zh-CN";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  const voice = pickChineseVoice();
+  if (voice) utterance.voice = voice;
+
+  utterance.onstart = () => setVoiceStatus("正在播报");
+  utterance.onend = () => {
+    clearSpeakingButtons();
+    setVoiceStatus("播报完成");
+  };
+  utterance.onerror = () => {
+    clearSpeakingButtons();
+    setVoiceStatus("播报失败，请再点一次");
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function pickChineseVoice() {
+  return window.speechSynthesis
+    .getVoices()
+    .find((voice) => voice.lang?.toLowerCase().startsWith("zh"));
+}
+
+function clearSpeakingButtons() {
+  document
+    .querySelectorAll(".is-speaking")
+    .forEach((button) => button.classList.remove("is-speaking"));
+}
+
+function setVoiceStatus(message) {
+  els.voiceStatus.textContent = message;
+  window.clearTimeout(setVoiceStatus.timer);
+  setVoiceStatus.timer = window.setTimeout(() => {
+    els.voiceStatus.textContent = "";
+  }, 2200);
 }
 
 function editTask(taskId) {
